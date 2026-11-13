@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Luca's Industrial Revolution</title>
+<meta name="description" content="Game-style trainer for Unit 3: the Industrial Revolution."/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07111f; --panel:#0f1f33; --panel2:#163049; --line:#24436a;
+  --text:#eaf4ff; --muted:#8fb0d6; --accent:#ffd166; --accent2:#06d6a0; --bad:#ef476f; --info:#4cc9f0; --purple:#b388ff;
+  --radius:16px; --pix:'Press Start 2P',monospace; --body:'Nunito',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--body);font-size:17px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+body{background:radial-gradient(1200px 600px at 50% -10%,#143656 0%,var(--bg) 60%);min-height:100vh}
+button{font-family:inherit;font-size:inherit;cursor:pointer;border:0;color:inherit;background:none}
+button:disabled{opacity:.5;cursor:default}
+input{font-family:inherit;font-size:inherit}
+b{font-weight:900}
+.screen{display:none;max-width:980px;margin:0 auto;padding:16px 16px 48px}
+.screen.on{display:block;animation:pop .25s ease}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.pill{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-weight:800;font-size:14px;display:inline-flex;gap:6px;align-items:center}
+.pill.xp{color:var(--accent)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--panel2);border:2px solid var(--line);border-radius:14px;padding:12px 18px;font-weight:900;transition:transform .08s,border-color .15s;min-height:48px}
+.btn:hover{border-color:var(--info)} .btn:active{transform:scale(.97)}
+.btn.primary{background:linear-gradient(135deg,#ffd166,#ff9f1c);color:#1a1200;border-color:#ffe08a}
+.btn.good{background:linear-gradient(135deg,#06d6a0,#1b9aaa);color:#00261d;border-color:#7af3d4}
+.btn.ghost{background:transparent} .btn.sm{padding:8px 12px;min-height:38px;font-size:14px;border-radius:10px} .btn.wide{width:100%}
+h1.pix,h2.pix,.pix{font-family:var(--pix);line-height:1.6}
+h1.pix{font-size:clamp(15px,3.4vw,26px);margin:0 0 6px;color:var(--accent);text-shadow:3px 3px 0 #000}
+h2.pix{font-size:clamp(11px,2.2vw,16px);margin:0 0 12px;color:var(--info)}
+.sub{color:var(--muted);font-weight:700}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
+.zone{position:relative;overflow:hidden;cursor:pointer;transition:transform .12s,border-color .15s}
+.zone:hover{transform:translateY(-3px);border-color:var(--info)}
+.zone .ico{font-size:40px;line-height:1;margin-bottom:8px} .zone .ttl{font-weight:900;font-size:19px}
+.zone .meta{color:var(--muted);font-size:14px;font-weight:700;margin:2px 0 8px} .zone .stars{font-size:18px;letter-spacing:2px;color:var(--accent)}
+.zone.boss{border-color:#ff7a90;background:linear-gradient(160deg,#3a1630,#0f1f33)}
+.zone .best{position:absolute;top:12px;right:12px;font-size:12px;font-weight:900;color:var(--muted)}
+.bar{height:12px;background:#07111f;border-radius:999px;overflow:hidden;border:1px solid var(--line)}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent2),var(--info));width:0;transition:width .5s}
+.skills{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.skill{font-size:14px;font-weight:700} .skill .lbl{display:flex;justify-content:space-between;margin-bottom:3px}
+.skill .bar>i.low{background:linear-gradient(90deg,var(--bad),#ff9f1c)}
+.stage{min-height:300px}
+.hud{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px} .hud .prog{flex:1;min-width:120px}
+.combo{font-family:var(--pix);font-size:11px;color:var(--accent2)} .combo.hot{color:#ff9f1c;animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-2px)}75%{transform:translateX(2px)}}
+.prompt{font-size:clamp(19px,3vw,25px);font-weight:900;margin:8px 0 16px;text-align:center}
+.prompt small{display:block;color:var(--muted);font-size:14px;font-weight:700;margin-top:4px}
+.opts{display:grid;gap:10px;grid-template-columns:1fr} @media(min-width:620px){.opts.two{grid-template-columns:1fr 1fr}}
+.opt{background:var(--panel2);border:2px solid var(--line);border-radius:14px;padding:14px 16px;text-align:left;font-weight:800;font-size:18px;transition:border-color .12s,transform .08s}
+.opt:hover{border-color:var(--info)} .opt:active{transform:scale(.98)}
+.opt.ok{border-color:var(--accent2);background:#0f3b32} .opt.bad{border-color:var(--bad);background:#3b1020} .opt.sel{border-color:var(--accent);background:#3b3010}
+.opt .k{display:inline-block;min-width:26px;color:var(--muted);font-family:var(--pix);font-size:10px;margin-right:8px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center} .row.end{justify-content:flex-end}
+.inp{width:100%;background:#07111f;border:2px solid var(--line);border-radius:14px;padding:12px 14px;color:var(--text);font-weight:800;font-size:20px;outline:none}
+.inp:focus{border-color:var(--info)} .inp.ok{border-color:var(--accent2)} .inp.bad{border-color:var(--bad)}
+.units{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.units button{background:var(--panel2);border:2px solid var(--line);border-radius:10px;padding:8px 14px;font-weight:900;font-size:16px}
+.units button.sel{border-color:var(--accent);background:#3b3010} .units button.ok{border-color:var(--accent2)} .units button.bad{border-color:var(--bad)}
+/* feedback */
+#fb{position:fixed;inset:0;background:rgba(3,8,18,.74);display:none;align-items:flex-end;justify-content:center;z-index:50;padding:12px} #fb.on{display:flex}
+#fb .sheet{width:100%;max-width:720px;background:var(--panel);border:2px solid var(--line);border-radius:20px;padding:20px;animation:up .22s ease;max-height:85vh;overflow:auto}
+@keyframes up{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+#fb .sheet.ok{border-color:var(--accent2)} #fb .sheet.bad{border-color:var(--bad)}
+#fb h3{margin:0 0 8px;font-size:22px} #fb .why{background:#07111f;border-radius:12px;padding:12px 14px;margin:10px 0;font-size:16px} #fb .ans{font-size:20px;font-weight:900;color:var(--accent2);margin:6px 0}
+.flash{position:fixed;left:50%;top:18%;transform:translateX(-50%);font-family:var(--pix);font-size:16px;padding:12px 18px;border-radius:12px;z-index:60;pointer-events:none;animation:fl .7s forwards}
+.flash.ok{background:#0f3b32;color:var(--accent2);border:2px solid var(--accent2)} .flash.bad{background:#3b1020;color:#ff9fb3;border:2px solid var(--bad)}
+@keyframes fl{0%{opacity:0;transform:translate(-50%,10px)}15%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-14px)}}
+/* tiles (unit chain) */
+.line{min-height:64px;background:#07111f;border:2px dashed var(--line);border-radius:14px;padding:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;font-size:19px}
+.line.ok{border-color:var(--accent2);border-style:solid} .line.bad{border-color:var(--bad);border-style:solid} .line .ph{color:var(--muted);font-weight:700;font-size:15px}
+.bank{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.tile{background:linear-gradient(180deg,#2b4f7a,#163049);border:2px solid #3f6ea3;border-radius:12px;padding:8px 12px;font-weight:900;font-size:17px;box-shadow:0 4px 0 #07111f;transition:transform .08s;text-align:center;line-height:1.15}
+.tile:active{transform:translateY(2px)} .tile.used{opacity:.25;pointer-events:none} .tile.fixed{background:#3b3010;border-color:var(--accent)}
+.tile .fr{display:block;border-top:2px solid #cfe3ff;margin-top:3px;padding-top:3px}
+.tile small{display:block;color:#cfe3ff;font-size:12px;font-weight:800}
+/* FBD */
+.fbd{position:relative;width:300px;height:300px;margin:0 auto 12px;background:#07111f;border:1px solid var(--line);border-radius:14px}
+.fbd svg{position:absolute;inset:0;width:100%;height:100%}
+.slot{position:absolute;transform:translate(-50%,-50%);background:var(--panel2);border:2px dashed var(--line);border-radius:10px;padding:6px 8px;font-weight:900;font-size:13px;min-width:62px;text-align:center;line-height:1.15}
+.slot.active{border-color:var(--accent);border-style:solid;background:#3b3010} .slot.set{border-style:solid;border-color:#3f6ea3} .slot.ok{border-color:var(--accent2)} .slot.bad{border-color:var(--bad)}
+/* 3D */
+#lab3d{width:100%;height:280px;border-radius:14px;overflow:hidden;background:#07111f;border:1px solid var(--line);position:relative;margin-bottom:12px}
+#lab3d canvas{display:block} #lab3d .ro{position:absolute;left:10px;top:8px;font-family:var(--pix);font-size:10px;color:var(--accent);line-height:1.8;text-shadow:1px 1px 0 #000}
+#lab3d .lg{position:absolute;right:10px;bottom:8px;font-size:12px;font-weight:800;color:var(--muted)}
+/* results */
+.big{font-family:var(--pix);font-size:clamp(16px,4vw,28px);color:var(--accent);text-align:center;margin:10px 0}
+.stars-big{font-size:46px;text-align:center;letter-spacing:6px;color:var(--accent);text-shadow:0 0 18px #ffd166aa}
+.mist{background:#07111f;border-radius:12px;padding:12px 14px;margin:8px 0;font-size:15px} .mist .y{color:#ff9fb3;text-decoration:line-through} .mist .c{color:var(--accent2);font-weight:900}
+/* boss */
+.ex-sec{margin-bottom:22px} .ex-sec h3{margin:0 0 10px;font-size:20px}
+.exq{background:#07111f;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0}
+.exq .qt{font-weight:800;margin-bottom:8px} .exq label{display:block;padding:6px 8px;border-radius:8px;cursor:pointer;font-weight:700}
+.exq label:hover{background:var(--panel2)} .exq input[type=radio]{margin-right:8px}
+.exq.ok{border-color:var(--accent2)} .exq.bad{border-color:var(--bad)} .key{color:var(--accent2);font-weight:900;font-size:15px;margin-top:6px;display:block}
+.exq .inp{max-width:260px;display:inline-block;padding:8px 10px;font-size:17px}
+/* reference */
+#ref{position:fixed;inset:0;background:rgba(3,8,18,.88);display:none;z-index:70;overflow:auto;padding:16px} #ref.on{display:block} #ref .inner{max-width:900px;margin:0 auto}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:8px 0 14px} td,th{border:1px solid var(--line);padding:7px 9px;text-align:left} th{background:#07111f;color:var(--info);font-size:13px}
+.tbl2{columns:300px;column-gap:14px}.tbl2 .card{break-inside:avoid;margin:0 0 14px;overflow-x:auto}
+#ref table{font-size:14px}#ref td,#ref th{padding:6px 8px}
+.tip{background:#07111f;border-left:4px solid var(--accent);padding:10px 12px;border-radius:8px;margin:10px 0 0;font-size:15px}
+.timer{font-family:var(--pix);font-size:18px;color:var(--bad)} .center{text-align:center} .mt{margin-top:14px} .hidden{display:none!important} .help{font-size:14px;color:var(--muted);font-weight:700}
+.formula{font-size:18px;font-weight:900;color:var(--accent);background:#07111f;border-radius:10px;padding:8px 12px;margin:0 0 8px;display:block}
+</style>
+</head>
+<body>
+
+<section class="screen" id="s-title">
+  <div class="card center" style="margin-top:28px">
+    <div style="font-size:64px;line-height:1">🏭⚙️</div>
+    <h1 class="pix">FACTORY TYCOON</h1>
+    <div class="sub">Luca's Unit 3 · The Industrial Revolution</div>
+    <p style="max-width:580px;margin:14px auto 18px">Seven zones built from the Unit 3 study guide: all 20 terms, the cause-and-effect chains, changes, impact, social classes, the big ideas, and a workshop for the long answer. Earn XP, collect stars, then beat the <b>Boss Test</b>.</p>
+    <div class="row" style="justify-content:center">
+      <button class="btn primary" onclick="actx();preloadSfx();go('s-hub');say(['Welcome back, Luca. Time to run the factory.'])">▶ START</button>
+      <button class="btn" onclick="openRef()">📘 Cheat sheet</button>
+    </div>
+    <p class="help mt">Progress saves on this device.</p>
+  </div>
+</section>
+
+<section class="screen" id="s-hub">
+  <div class="topbar">
+    <h1 class="pix" style="margin:0">FACTORY MAP</h1>
+    <div class="row">
+      <span class="pill" id="pill-level">Lv 1</span><span class="pill xp" id="pill-xp">0 XP</span><span class="pill" id="pill-streak">🔥 0</span>
+      <button class="btn sm" onclick="openRef()">📘</button>
+      <button class="btn sm" id="voice" onclick="toggleVoice()" title="Voice on/off">🗣️</button>
+      <button class="btn sm" id="mute" onclick="toggleMute()" title="All sound on/off">🔊</button>
+    </div>
+  </div>
+  <div class="bar" style="margin-bottom:14px"><i id="xpbar"></i></div>
+  <div class="grid" id="zones"></div>
+  <div class="card mt"><h2 class="pix">SKILL METER</h2><div class="skills" id="skills"></div><div class="tip mt" id="coach"></div></div>
+</section>
+
+<section class="screen" id="s-game">
+  <div class="topbar">
+    <button class="btn sm ghost" onclick="quitGame()">← Map</button>
+    <div class="row"><span class="pill" id="g-title">Zone</span><button class="btn sm" onclick="openRef()">📘</button></div>
+  </div>
+  <div class="hud"><div class="prog"><div class="bar"><i id="g-prog"></i></div></div><span class="pill" id="g-score">0 ✔</span><span class="combo" id="g-combo"></span></div>
+  <div class="card stage" id="stage"></div>
+</section>
+
+<section class="screen" id="s-results">
+  <div class="card center">
+    <h2 class="pix" id="r-zone">ZONE CLEAR</h2>
+    <div class="stars-big" id="r-stars">★★★</div>
+    <div class="big" id="r-acc">100%</div>
+    <div class="sub" id="r-xp">+0 XP</div>
+    <div id="r-mist" style="text-align:left;margin-top:14px"></div>
+    <div class="row mt" style="justify-content:center"><button class="btn primary" id="r-again">↻ Play again</button><button class="btn" onclick="go('s-hub')">🗺 Map</button></div>
+  </div>
+</section>
+
+<section class="screen" id="s-boss">
+  <div class="topbar"><button class="btn sm ghost" onclick="go('s-hub')">← Map</button><span class="pill">👑 BOSS TEST</span></div>
+  <div class="card" id="boss-body"></div>
+</section>
+
+<div id="fb"><div class="sheet" id="fb-sheet"></div></div>
+
+<div id="ref"><div class="inner">
+  <div class="topbar"><h1 class="pix" style="margin:0">CHEAT SHEET</h1><button class="btn sm" onclick="closeRef()">✕ Close</button></div>
+  <div class="tbl2">
+    <div class="card"><h2 class="pix">CAUSE → EFFECT</h2>
+      <p style="margin:0 0 8px"><b>Agricultural Revolution</b> → more food → cheaper food → population grows → more workers.</p>
+      <p style="margin:0 0 8px"><b>Enclosure</b> → peasants kicked off the land → move to cities → <b>urbanization</b>.</p>
+      <p style="margin:0 0 8px"><b>Steam engine</b> → factories leave the rivers → factories fill the cities.</p>
+      <p style="margin:0"><b>Dirty cities</b> → cholera → <b>germ theory</b> → better sanitation.</p>
+    </div>
+    <div class="card"><h2 class="pix">WHO DID WHAT</h2>
+      <table><tr><th>person</th><th>known for</th></tr>
+      <tr><td>James Watt</td><td>steam engine</td></tr><tr><td>Eli Whitney</td><td>cotton gin (removes seeds)</td></tr><tr><td>Louis Pasteur</td><td>germ theory</td></tr>
+      <tr><td>Adam Smith</td><td>capitalism, laissez-faire, <i>The Wealth of Nations</i></td></tr><tr><td>Karl Marx</td><td>communism, <i>The Communist Manifesto</i></td></tr></table>
+    </div>
+    <div class="card"><h2 class="pix">CHANGES</h2>
+      <p style="margin:0 0 8px"><b>Early:</b> enclosure movement · Agricultural Revolution (start of the IR) · urbanization · water powered factories.</p>
+      <p style="margin:0"><b>Later:</b> steam engine powered factories · assembly lines (more efficient) · germ theory (improved sanitation).</p>
+    </div>
+    <div class="card"><h2 class="pix">IMPACT</h2>
+      <p style="margin:0 0 8px"><b>Positive:</b> suffrage movement · child labor laws · inventions (steam engine, cotton gin).</p>
+      <p style="margin:0"><b>Negative:</b> poor living and working conditions · pollution · child labor · tenements · cholera.</p>
+    </div>
+    <div class="card"><h2 class="pix">SOCIAL CLASSES</h2>
+      <table><tr><th>class</th><th>who</th><th>life</th></tr>
+      <tr><td>Upper</td><td>business owners, aristocrats</td><td>wealthy, best conditions</td></tr><tr><td>Middle</td><td>entrepreneurs, teachers, librarians</td><td>comfortable</td></tr><tr><td>Working</td><td>factory workers, miners</td><td>12–16 hr days, low wages, tenements</td></tr></table>
+      <div class="tip">Higher class = better living and working conditions.</div>
+    </div>
+    <div class="card"><h2 class="pix">BIG IDEAS</h2>
+      <p style="margin:0 0 6px"><b>Capitalism:</b> private owners compete for profit (Smith).</p>
+      <p style="margin:0 0 6px"><b>Laissez-faire:</b> government leaves business alone.</p>
+      <p style="margin:0 0 6px"><b>Socialism:</b> society or government owns major industries; wealth shared more equally.</p>
+      <p style="margin:0 0 6px"><b>Communism:</b> all property owned in common, no classes (Marx).</p>
+      <p style="margin:0"><b>Suffrage:</b> the right to vote.</p>
+    </div>
+    <div class="card"><h2 class="pix">LONG ANSWER</h2>
+      <p style="margin:0 0 6px">1. <b>Claim</b>: answer the question in one sentence.</p>
+      <p style="margin:0 0 6px">2. <b>Evidence</b>: a word box term + what it shows.</p>
+      <p style="margin:0 0 6px">3. <b>Evidence</b>: a second term + what it shows.</p>
+      <p style="margin:0">4. <b>Conclusion</b>: tie it back to the question.</p>
+      <div class="tip">Underline the word box terms you use.</div>
+    </div>
+  </div>
+  <div class="card mt"><h2 class="pix">ALL 20 TERMS</h2><div id="ref-vocab" style="columns:2;column-gap:20px;font-size:15px"></div></div>
+</div></div>
+
+<script>
+/* ===================== UTILITIES ===================== */
+const $=s=>document.querySelector(s);
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const uniq=a=>[...new Set(a)];
+const fmt=n=>{const r=Math.round(n*100)/100;return r.toLocaleString('en-US',{maximumFractionDigits:2});};
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+
+/* ===================== SOUND / VOICE (ElevenLabs clips in /audio) ===================== */
+let AC=null;
+function beep(freqs,dur=0.09,type='square',vol=0.05){if(P.muted)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();freqs.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=f;g.gain.value=vol;o.connect(g);g.connect(AC.destination);const t=AC.currentTime+i*dur;o.start(t);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+dur);o.stop(t+dur);});}catch(e){}}
+const AMAP={'á':'a_','é':'e_','í':'i_','ó':'o_','ú':'u_','ñ':'n_','ü':'u__'};
+function aslug(t){const raw=t.toLowerCase().trim();t=raw.replace(/[áéíóúñü]/g,c=>AMAP[c]).replace(/[^a-z0-9_]+/g,'-').replace(/^-+|-+$/g,'');if(t.length>60){let h=5381;for(let i=0;i<raw.length;i++)h=((h*33)^raw.charCodeAt(i))>>>0;t=t.slice(0,48)+'-'+h.toString(16);}return t||'x';}
+const AUD={buf:{},miss:{},srcs:[],tok:null};
+function actx(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC;}
+async function aload(key){if(AUD.buf[key])return AUD.buf[key];if(AUD.miss[key])return null;try{const r=await fetch('audio/'+key+'.mp3');if(!r.ok)throw 0;const ab=await r.arrayBuffer();const b=await actx().decodeAudioData(ab);AUD.buf[key]=b;return b;}catch(e){AUD.miss[key]=1;return null;}}
+function stopVoice(){AUD.srcs.forEach(s=>{try{s.stop();}catch(e){}});AUD.srcs=[];AUD.tok=null;}
+async function say(parts){if(P.muted||P.voice===false)return;stopVoice();const tok={};AUD.tok=tok;const bufs=await Promise.all(parts.map(p=>aload(aslug(p))));if(AUD.tok!==tok)return;const ac=actx();if(!ac)return;let t=ac.currentTime+0.03;bufs.forEach(b=>{if(!b)return;const s=ac.createBufferSource();s.buffer=b;s.connect(ac.destination);s.start(t);t+=b.duration+0.12;AUD.srcs.push(s);});}
+function playSfx(name,fallback,vol=0.55){if(P.muted)return;const b=AUD.buf['sfx-'+name];if(b){const ac=actx();const s=ac.createBufferSource();s.buffer=b;const g=ac.createGain();g.gain.value=vol;s.connect(g);g.connect(ac.destination);s.start();}else{fallback&&fallback();aload('sfx-'+name);}}
+const SFX_NAMES=['ok','bad','tap','click','win','fanfare','tick','star','combo','lose'];
+function preloadSfx(){SFX_NAMES.forEach(n=>aload('sfx-'+n));}
+const sfx={ok:()=>playSfx('ok',()=>beep([660,880])),bad:()=>playSfx('bad',()=>beep([180,140],0.14,'sawtooth')),win:()=>playSfx('win',()=>beep([523,659,784,1047],0.11)),tick:()=>playSfx('tap',()=>beep([1200],0.03,'sine',0.02),0.35),click:()=>playSfx('click',null,0.3),fanfare:()=>playSfx('fanfare',()=>beep([523,659,784,1047,1319],0.12)),star:()=>playSfx('star',null),combo:()=>playSfx('combo',null,0.45),lose:()=>playSfx('lose',()=>beep([300,200,150],0.2,'sawtooth'))};
+const PRAISE_OK=['Correct!','Nice!','Exactly.','You got it.','Boom.'];
+function toggleVoice(){P.voice=P.voice===false;save();$('#voice').textContent=P.voice===false?'🗣️✕':'🗣️';}
+function toggleMute(){P.muted=!P.muted;save();$('#mute').textContent=P.muted?'🔇':'🔊';}
+
+/* ===================== PROFILE ===================== */
+const DEF={xp:0,zones:{},skills:{},streak:0,last:null,muted:false,bossBest:null};
+let P=load();
+function load(){try{const p=JSON.parse(localStorage.getItem('lucaHistory'));if(p)return Object.assign({},DEF,p);}catch(e){}return JSON.parse(JSON.stringify(DEF));}
+function save(){try{localStorage.setItem('lucaHistory',JSON.stringify(P));}catch(e){}}
+function touchStreak(){const d=new Date().toDateString();if(P.last!==d){const y=new Date(Date.now()-864e5).toDateString();P.streak=(P.last===y)?P.streak+1:1;P.last=d;save();}}
+function addXP(n){P.xp+=n;save();}
+const level=()=>Math.floor(P.xp/250)+1;
+function logSkill(k,ok){if(!k)return;const s=P.skills[k]=P.skills[k]||{ok:0,n:0};s.n++;if(ok)s.ok++;save();}
+
+/* ===================== CONTENT (Unit 3 study guide: the Industrial Revolution) ===================== */
+const TERMS=[ // key, name, definition, detail, group
+ ['agrev','Agricultural Revolution','a shift to commercial crops and new farming methods that increased the food supply','More food meant cheaper food and population growth. It is where the Industrial Revolution starts.','change'],
+ ['enclosure','Enclosure Movement','the fencing off of common land by wealthy landowners','Owners used the land for commercial crops and sheep (wool). Peasants were kicked off the land and went hungry, so many moved to cities.','change'],
+ ['urban','Urbanization','the growth of cities as people moved from the countryside','Example from the notes: one city grew from 17,000 people in 1750 to 70,000 in 1801.','change'],
+ ['working','Working Conditions','what factory work was like: 12 to 16 hour days, very low wages, and no safety standards','Factories were hot with no ventilation, coal dust caused lung problems, and getting hurt meant getting fired.','life'],
+ ['living','Living Conditions','what city life was like: no sewage or sanitation, garbage in the streets, and contaminated water','Disease spread quickly and there was a lot of pollution.','life'],
+ ['tenements','Tenements','small, crowded two-room houses where an entire working-class family lived','They had no ventilation and poor sanitation.','life'],
+ ['assembly','Assembly Lines','a way of producing goods where each person does one part of a bigger task','It made production far more efficient.','invention'],
+ ['steam','Steam Engine','an engine improved by James Watt that powered factories, trains, and ships','Before it, factories ran on water power and had to sit next to rivers. Steam let factories be built anywhere.','invention'],
+ ['gin','Cotton Gin','a machine invented by Eli Whitney that quickly separates the seeds from cotton','It cleaned cotton far faster than by hand, feeding the textile factories.','invention'],
+ ['germ','Germ Theory','the idea, proven by Louis Pasteur, that tiny germs cause disease','It led cities to improve sanitation and clean up their water.','invention'],
+ ['upper','The Upper Class','a small, elite group: business and factory owners and aristocrats','They had the most wealth and the best living conditions.','class'],
+ ['middle','The Middle Class','a small class of entrepreneurs and professionals like teachers and librarians','They lived comfortably, with better conditions than workers.','class'],
+ ['wclass','The Working Class','the largest class: factory workers and miners who earned very low wages','They worked 12 to 16 hour days and lived in tenements.','class'],
+ ['suffrage','Suffrage Movement','the campaign to win the right to vote for people who did not have it, such as women and working-class men','Suffrage means the right to vote. It is a positive effect of the Industrial Revolution.','idea'],
+ ['marx','Karl Marx','the German thinker who wrote The Communist Manifesto and is the father of communism','He said the workers would rise up against the factory owners and create a society without classes.','idea'],
+ ['smith','Adam Smith','the Scottish economist who wrote The Wealth of Nations and is the father of capitalism','He argued for free markets with little government interference.','idea'],
+ ['capitalism','Capitalism','an economic system where private individuals own businesses and compete to make a profit','Factory owners in the Industrial Revolution were capitalists. Linked to Adam Smith.','idea'],
+ ['laissez','Laissez-Faire','the idea that government should leave business alone','French for “let them do.” No rules on wages, hours, or safety. Linked to Adam Smith and capitalism.','idea'],
+ ['communism','Communism','a system where all property is owned in common and there are no social classes','The idea of Karl Marx. No private ownership of factories.','idea'],
+ ['socialism','Socialism','a system where society or the government owns the major industries and shares wealth more equally','It grew as a reaction to the harsh conditions workers faced under capitalism.','idea']
+];
+const T=Object.fromEntries(TERMS.map(t=>[t[0],t]));
+const RULES=Object.fromEntries(TERMS.map(t=>[t[0],`${t[1]}: ${t[2]}.`]));
+Object.assign(RULES,{
+ chain_food:'The Agricultural Revolution made more food. More food meant more people, and more people meant more workers.',
+ chain_encl:'Enclosure pushed peasants off the land, so they moved to cities to find work. That is urbanization.',
+ chain_steam:'Steam power freed factories from rivers, so factories and workers crowded into cities.',
+ chain_germ:'Dirty, crowded cities spread disease. Germ theory explained why, and cities improved sanitation.',
+ chain_reform:'Harsh conditions led workers and reformers to demand change, like child labor laws and the right to vote.',
+ early:'Early changes: the Agricultural Revolution, the enclosure movement, urbanization, and water powered factories.',
+ later:'Later changes: steam engines powering factories, assembly lines, and germ theory improving sanitation.',
+ pos:'Positive effects: new inventions, child labor laws, and the suffrage movement.',
+ neg:'Negative effects: poor living and working conditions, pollution, child labor, tenements, and cholera.',
+ classrule:'The higher your social class, the better your living and working conditions.',
+ para:'A strong long answer goes: claim, evidence, evidence, conclusion. Use word box terms as your evidence.',
+ smithmarx:'Adam Smith goes with capitalism and laissez-faire. Karl Marx goes with communism.'
+});
+const CHAINS=[
+ {title:'From farms to more workers',rule:'chain_food',items:['New farming methods (Agricultural Revolution)','More food, and food gets cheaper','Population grows','More workers and more demand for goods']},
+ {title:'Why cities grew',rule:'chain_encl',items:['Landowners fence off common land (enclosure)','Peasants are kicked off the land','They move to cities looking for work','Cities grow fast (urbanization) and factories get workers']},
+ {title:'What steam changed',rule:'chain_steam',items:['Factories run on water power, next to rivers','The steam engine powers factories instead','Factories can be built anywhere, so they fill the cities','More people crowd into cities and tenements']},
+ {title:'From disease to sanitation',rule:'chain_germ',items:['Crowded cities with no sewage and dirty water','Diseases like cholera spread','Germ theory shows that germs cause disease','Cities improve sanitation']},
+ {title:'From hardship to reform',rule:'chain_reform',items:['Long hours, low wages, and child labor in factories','Workers and reformers demand change','Child labor laws and the suffrage movement','Conditions slowly improve']}
+];
+const PHASE=[ // item, early|later
+ ['The enclosure movement fences off common land','Early change','early'],['The Agricultural Revolution increases the food supply','Early change','early'],['People move to cities (urbanization)','Early change','early'],['Factories are powered by water, next to rivers','Early change','early'],
+ ['Steam engines power the factories','Later change','later'],['Assembly lines make production more efficient','Later change','later'],['Germ theory leads to better sanitation','Later change','later']
+];
+const EFFECTS=[['The suffrage movement (fighting for the right to vote)','Positive effect'],['Child labor laws','Positive effect'],['New inventions like the steam engine and cotton gin','Positive effect'],['More goods produced more efficiently','Positive effect'],
+ ['Poor living conditions','Negative effect'],['Dangerous working conditions','Negative effect'],['Pollution','Negative effect'],['Child labor','Negative effect'],['Crowded tenements','Negative effect'],['Cholera and other diseases','Negative effect']];
+const CONDS=[['12 to 16 hour work days','Working conditions'],['Very low wages','Working conditions'],['Hot factories with no ventilation','Working conditions'],['Coal dust causing lung problems','Working conditions'],['No safety standards','Working conditions'],['Getting hurt meant getting fired','Working conditions'],
+ ['No sewage or sanitation','Living conditions'],['Garbage left on the streets','Living conditions'],['Contaminated drinking water','Living conditions'],['A whole family in a two-room tenement','Living conditions'],['Disease spreading through the neighborhood','Living conditions']];
+const CLASSES=[['A factory owner','Upper class'],['An aristocrat with inherited land','Upper class'],['The owner of several businesses','Upper class'],['A teacher','Middle class'],['A librarian','Middle class'],['An entrepreneur running a small shop','Middle class'],['A doctor or lawyer','Middle class'],
+ ['A coal miner','Working class'],['A child working in a textile mill','Working class'],['A factory worker on an assembly line','Working class'],['A family living in a tenement','Working class'],['Someone working 14 hours a day for very low wages','Working class']];
+const LONG=[
+ {q:'How did social class impact a person’s life during the Industrial Revolution?',focus:'Wealth and place (status) in society',focusOpts:['Wealth and place (status) in society','Which inventions were most important','Why the Agricultural Revolution started','How germ theory was discovered'],
+  good:['Living conditions','Working conditions','Tenements','Upper, middle, and working class'],bad:['Cotton gin','Enclosure movement','Germ theory','Agricultural Revolution'],
+  para:['A person’s social class decided how they lived and worked during the Industrial Revolution.','The upper class owned the businesses, and the middle class of professionals lived comfortably with better living conditions.','The working class faced harsh working conditions, like 12 to 16 hour days for very low wages, and lived in crowded tenements.','So the higher your class, the better your living and working conditions were.'],alt:false},
+ {q:'Topic: Changes in the Industrial Revolution. What changed?',focus:'How life and work changed, early on and later',focusOpts:['How life and work changed, early on and later','Only the negative effects on workers','Who Karl Marx and Adam Smith were','Which social class had the most money'],
+  good:['Enclosure movement','Agricultural Revolution','Urbanization','Steam engine','Assembly lines','Germ theory'],bad:['Communism','The upper class','Suffrage movement','Laissez-faire'],
+  para:['The Industrial Revolution changed how people farmed, worked, and lived.','First, the Agricultural Revolution and the enclosure movement pushed people off farms and into cities, causing urbanization.','Later, the steam engine powered factories, and assembly lines made production more efficient.','Together these changes moved society from farms and villages to factories and cities.'],alt:false},
+ {q:'Topic: Impact of the Industrial Revolution. What were its effects?',focus:'Both the positive and the negative effects',focusOpts:['Both the positive and the negative effects','Only how farming changed','The life of Eli Whitney','Why factories were near rivers'],
+  good:['Working conditions','Living conditions','Tenements','Suffrage movement','Steam engine','Cotton gin'],bad:['Enclosure movement','Adam Smith','The middle class','Laissez-faire'],
+  para:['The Industrial Revolution had both positive and negative effects.','On the negative side, workers faced poor working conditions and child labor, and lived in polluted cities and tenements where cholera spread.','On the positive side, inventions like the steam engine and cotton gin increased production, and reforms like child labor laws and the suffrage movement followed.','Overall, it made life harder for many workers at first but led to progress and reform.'],alt:true}
+];
+
+/* ===================== QUESTION GENERATORS ===================== */
+const mcq=(q,opts,a,why,skill,rule)=>({type:'mc',q,opts,a,why,skill,rule});
+const sortq=(item,opts,a,why,skill,rule)=>mcq(`<b>${item}</b><br><span class="sub" style="font-size:16px">Where does it belong?</span>`,opts,a,why,skill,rule);
+function termQ(t,skill){const others=shuffle(TERMS.filter(x=>x!==t&&x[4]===t[4])).concat(shuffle(TERMS.filter(x=>x!==t&&x[4]!==t[4]))).slice(0,3);const why=`<b>${t[1]}</b>: ${t[2]}. ${t[3]}`;
+  return rnd([0,1])?mcq(`Which term means: <i>“${t[2]}”</i>?`,[t[1],...others.map(o=>o[1])],t[1],why,skill||'terms',t[0]):mcq(`What is <b>${t[1].replace(/^The /,'the ')}</b>?`,[cap(t[2]),...others.map(o=>cap(o[2]))],cap(t[2]),why,skill||'terms',t[0]);}
+function genZ1(){return shuffle(TERMS).slice(0,12).map(t=>termQ(t));}
+function genZ2(){const qs=shuffle(CHAINS).slice(0,2).map(c=>({type:'order',prompt:`Put the chain in order: <b>${c.title}</b>`,sub:'Tap the steps from first cause to final effect.',items:c.items,why:RULES[c.rule],skill:'causes',rule:c.rule}));
+  qs.push(...shuffle([
+   mcq('What did the <b>cotton gin</b> do?',['Separated the seeds from cotton very quickly','Wove cotton into cloth','Powered factories with steam','Planted cotton in rows'],'Separated the seeds from cotton very quickly','Eli Whitney’s cotton gin <b>cleaned</b> cotton (removed the seeds). It did not weave it.','inventions','gin'),
+   mcq('Why was the <b>steam engine</b> so important?',['It powered factories, so they no longer had to be built next to rivers','It made the food supply bigger','It proved that germs cause disease','It gave workers the right to vote'],'It powered factories, so they no longer had to be built next to rivers','Before steam, factories ran on water power beside rivers. Steam let them be built anywhere, and it also powered trains and ships.','inventions','steam'),
+   mcq('What does <b>germ theory</b> say?',['Tiny germs cause disease','All water is dangerous','Factories cause disease','Disease comes from bad air only'],'Tiny germs cause disease','Louis Pasteur showed that <b>germs</b> cause disease. Dirty water spreads germs, which is why cities improved sanitation.','inventions','germ'),
+   mcq('Who improved the steam engine?',['James Watt','Eli Whitney','Louis Pasteur','Adam Smith'],'James Watt','James Watt → steam engine. Eli Whitney → cotton gin. Louis Pasteur → germ theory.','inventions','steam'),
+   mcq('Who invented the cotton gin?',['Eli Whitney','James Watt','Louis Pasteur','Karl Marx'],'Eli Whitney','Eli Whitney → cotton gin. James Watt → steam engine. Louis Pasteur → germ theory.','inventions','gin'),
+   mcq('Who proved germ theory?',['Louis Pasteur','James Watt','Eli Whitney','Adam Smith'],'Louis Pasteur','Louis Pasteur → germ theory. James Watt → steam engine. Eli Whitney → cotton gin.','inventions','germ'),
+   mcq('What happened to peasants during the <b>enclosure movement</b>?',['They were kicked off the land and many went hungry','They were given their own farms','They became factory owners','They got the right to vote'],'They were kicked off the land and many went hungry',RULES.chain_encl,'causes','chain_encl'),
+   mcq('What was one result of the <b>Agricultural Revolution</b>?',['More food, cheaper food, and population growth','Less food and higher prices','Factories closed','Cities got smaller'],'More food, cheaper food, and population growth',RULES.chain_food,'causes','chain_food'),
+   mcq('What did landowners use enclosed land for?',['Commercial crops and sheep (wool)','Tenements','Steam engines','Public parks'],'Commercial crops and sheep (wool)','Owners fenced off common land to grow crops to sell and raise sheep for wool.','causes','enclosure'),
+   mcq('How do <b>assembly lines</b> make production more efficient?',['Each person does one part of the task','One person builds the whole product','Machines are powered by water','Workers take turns resting'],'Each person does one part of the task',RULES.assembly,'inventions','assembly'),
+   mcq('Where does the Industrial Revolution begin, according to the notes?',['With the Agricultural Revolution','With germ theory','With the suffrage movement','With communism'],'With the Agricultural Revolution','Agricultural Revolution = start of the Industrial Revolution: more food → more people → more workers.','causes','agrev')]).slice(0,8));
+  return shuffle(qs);}
+function genZ3(){const qs=shuffle(PHASE).slice(0,6).map(([it,a,r])=>sortq(it,['Early change','Later change'],a,RULES[r],'changes',r));
+  qs.push(...shuffle([
+   mcq('<b>Before</b> the steam engine, what powered factories?',['Water (rivers)','Electricity','Coal dust','Assembly lines'],'Water (rivers)','Water powered factories came first, so they had to be beside rivers. Steam came later.','changes','steam'),
+   mcq('Which pair shows a <b>before → after</b> change?',['Water powered factories → steam powered factories','Steam engines → water wheels','Cities → farms','Assembly lines → making goods one at a time'],'Water powered factories → steam powered factories',RULES.later,'changes','later'),
+   mcq('A city’s population goes from 17,000 in 1750 to 70,000 in 1801. What is this an example of?',['Urbanization','The enclosure movement','Laissez-faire','Germ theory'],'Urbanization',RULES.urban+' '+T.urban[3],'changes','urban'),
+   mcq('Which later change improved sanitation in cities?',['Germ theory','The cotton gin','The enclosure movement','Assembly lines'],'Germ theory',RULES.chain_germ,'changes','chain_germ'),
+   mcq('Which early change pushed people off farms and toward cities?',['The enclosure movement','Germ theory','Assembly lines','The suffrage movement'],'The enclosure movement',RULES.chain_encl,'changes','chain_encl'),
+   {type:'order',prompt:'Put these changes in order, earliest first',sub:'Tap them from first to last.',items:['Agricultural Revolution and enclosure','Urbanization: people move to cities','Steam engines power factories','Germ theory improves sanitation'],why:RULES.early+' '+RULES.later,skill:'changes',rule:'later'}]).slice(0,4));
+  return shuffle(qs);}
+function genZ4(){const qs=shuffle(CONDS).slice(0,5).map(([it,a])=>sortq(it,['Working conditions','Living conditions'],a,a==='Working conditions'?RULES.working:RULES.living,'conditions',a==='Working conditions'?'working':'living'));
+  qs.push(...shuffle(EFFECTS).slice(0,5).map(([it,a])=>sortq(it,['Positive effect','Negative effect'],a,a==='Positive effect'?RULES.pos:RULES.neg,'effects',a==='Positive effect'?'pos':'neg')));
+  qs.push(...shuffle([mcq('What were <b>tenements</b>?',['Small two-room houses where a whole family lived, with poor sanitation','Large homes for factory owners','Factories powered by water','Schools for working children'],'Small two-room houses where a whole family lived, with poor sanitation',RULES.tenements,'conditions','tenements'),
+   mcq('How long was a typical factory work day?',['12 to 16 hours','6 to 8 hours','4 hours','24 hours'],'12 to 16 hours',RULES.working,'conditions','working'),
+   mcq('What often happened to a worker who got hurt on the job?',['They were fired','They were paid extra','They got time off with pay','The factory closed'],'They were fired','There were no safety standards, and getting hurt meant getting fired.','conditions','working'),
+   mcq('Why did disease spread so fast in industrial cities?',['No sewage system, garbage in the streets, and contaminated water','Too many doctors','The weather was cold','People ate too much food'],'No sewage system, garbage in the streets, and contaminated water',RULES.living,'conditions','living')]).slice(0,2));
+  return shuffle(qs);}
+function genZ5(){const qs=shuffle(CLASSES).slice(0,7).map(([it,a])=>sortq(it,['Upper class','Middle class','Working class'],a,`${RULES.upper}<br>${RULES.middle}<br>${RULES.wclass}`,'classes',a==='Upper class'?'upper':a==='Middle class'?'middle':'wclass'));
+  qs.push(...shuffle([mcq('Which class was the <b>largest</b>?',['The working class','The upper class','The middle class','They were all the same size'],'The working class',RULES.wclass,'classes','wclass'),
+   mcq('How did social class affect living conditions?',['The higher the class, the better the conditions','Everyone lived the same way','The working class had the best housing','Class made no difference'],'The higher the class, the better the conditions',RULES.classrule,'classes','classrule'),
+   mcq('Which class lived in tenements?',['The working class','The upper class','The middle class','Aristocrats'],'The working class',RULES.tenements,'classes','tenements'),
+   mcq('Teachers, librarians, and entrepreneurs belonged to which class?',['The middle class','The upper class','The working class','The aristocracy'],'The middle class',RULES.middle,'classes','middle'),
+   mcq('Who made up the upper class?',['Business owners and aristocrats','Factory workers and miners','Teachers and librarians','Peasants pushed off the land'],'Business owners and aristocrats',RULES.upper,'classes','upper')]).slice(0,3));
+  return shuffle(qs);}
+function genZ6(){const ideas=TERMS.filter(t=>t[4]==='idea'||t[0]==='wclass');const qs=shuffle(ideas).slice(0,6).map(t=>termQ(t,'ideas'));
+  qs.push(...shuffle([mcq('Which pair goes together?',['Adam Smith and capitalism','Adam Smith and communism','Karl Marx and laissez-faire','Karl Marx and capitalism'],'Adam Smith and capitalism',RULES.smithmarx,'ideas','smithmarx'),
+   mcq('Who is the father of <b>communism</b>?',['Karl Marx','Adam Smith','James Watt','Louis Pasteur'],'Karl Marx',RULES.smithmarx,'ideas','marx'),
+   mcq('What does <b>laissez-faire</b> mean for factories?',['The government does not set rules on wages, hours, or safety','The government owns every factory','Workers own the factories together','Factories must close on weekends'],'The government does not set rules on wages, hours, or safety',RULES.laissez+' '+T.laissez[3],'ideas','laissez'),
+   mcq('What does <b>suffrage</b> mean?',['The right to vote','Suffering in factories','A type of factory','A farming method'],'The right to vote',RULES.suffrage,'ideas','suffrage'),
+   mcq('In which system do private individuals own the factories and compete for profit?',['Capitalism','Communism','Socialism','Enclosure'],'Capitalism',RULES.capitalism,'ideas','capitalism'),
+   mcq('Which system has <b>no social classes</b> and no private ownership of factories?',['Communism','Capitalism','Laissez-faire','Urbanization'],'Communism',RULES.communism,'ideas','communism'),
+   mcq('Why did ideas like socialism and communism grow during the Industrial Revolution?',['As a reaction to the harsh conditions workers faced','Because factory owners wanted them','Because farming improved','Because of germ theory'],'As a reaction to the harsh conditions workers faced',T.socialism[3],'ideas','socialism'),
+   mcq('Which book did Adam Smith write?',['The Wealth of Nations','The Communist Manifesto','The Cotton Gin','The Jungle'],'The Wealth of Nations',RULES.smith,'ideas','smith'),
+   mcq('Which book did Karl Marx write?',['The Communist Manifesto','The Wealth of Nations','On the Origin of Species','The Steam Engine'],'The Communist Manifesto',RULES.marx,'ideas','marx')]).slice(0,5));
+  return shuffle(qs);}
+function genZ7(){const qs=[];LONG.forEach(L=>{
+   qs.push(mcq(`Long answer: <b>${L.q}</b><br><span class="sub" style="font-size:16px">What is the question focusing on?</span>`,L.focusOpts,L.focus,'Read the question first and say what it is really asking before you pick evidence.','writing','para'));
+   const g=shuffle(L.good),b=shuffle(L.bad);qs.push(mcq(`<b>${L.q}</b><br><span class="sub" style="font-size:16px">Which word box term is the best evidence?</span>`,[g[0],b[0],b[1],b[2]],g[0],`Terms that fit this question: <b>${L.good.join(', ')}</b>. Pick evidence that connects directly to what the question asks.`,'writing','para'));
+   qs.push({type:'order',prompt:`Build the paragraph: <b>${L.q}</b>`,sub:'Tap the sentences in order: claim → evidence → evidence → conclusion.',items:L.para,alt:L.alt,why:RULES.para,skill:'writing',rule:'para',model:true});});
+  return qs;}
+const BRIEF_IDEAS=`<div class="prompt">Briefing: the big ideas<small>These boxes were blank on the study guide. Read them once (tap a name to hear it), then start.</small></div>`+['wclass','suffrage','smith','capitalism','laissez','marx','communism','socialism'].map(k=>`<div class="mist"><b data-say="${RULES[k]}" style="cursor:pointer;color:var(--accent)">🔊 ${T[k][1]}</b> — ${T[k][2]}. <span class="sub">${T[k][3]}</span></div>`).join('')+`<div class="tip">Memory hook: <b>Smith = Capitalism = laissez-faire</b> (owners, profit, government hands off). <b>Marx = Communism</b> (no classes, everything shared). <b>Socialism</b> sits in between.</div>`;
+function askOrder(st,q,done){st.appendChild(el('div','prompt',`${q.prompt}<small>${run.id?run.i+'/'+run.qs.length+' · ':''}${q.sub}</small>`));const line=el('div','line');line.style.flexDirection='column';line.style.alignItems='stretch';const ph=el('span','ph','Tap the first one…');line.appendChild(ph);st.appendChild(line);
+  const bank=el('div','bank');bank.style.flexDirection='column';const placed=[];shuffle(q.items).forEach(t=>{const b=el('button','tile',t);b.style.textAlign='left';b.style.fontSize='16px';b.onclick=()=>{if(b.classList.contains('used'))return;b.classList.add('used');const x=el('button','tile',`<small>${placed.length+1}</small>${t}`);x.style.textAlign='left';x.style.fontSize='16px';x.t=t;x.onclick=()=>{x.remove();b.classList.remove('used');placed.splice(placed.indexOf(x),1);placed.forEach((p,i)=>p.querySelector('small').textContent=i+1);ph.style.display=placed.length?'none':'';};placed.push(x);line.appendChild(x);ph.style.display='none';sfx.tick();};bank.appendChild(b);});st.appendChild(bank);
+  const row=el('div','row end');const chk=el('button','btn good','✔ Check order');row.appendChild(chk);st.appendChild(row);
+  chk.onclick=()=>{if(placed.length<q.items.length){flash('bad','Place all of them');return;}chk.disabled=true;const got=placed.map(p=>p.t);const same=a=>a.every((x,i)=>x===got[i]);const ok=same(q.items)||(q.alt&&same([q.items[0],q.items[2],q.items[1],q.items[3]]));line.classList.add(ok?'ok':'bad');logSkill(q.skill,ok);
+    const ans=q.model?q.items.join(' '):q.items.map((x,i)=>`${i+1}. ${x}`).join('<br>');mark(ok,{prompt:q.prompt,yours:got.map((x,i)=>`${i+1}. ${x}`).join(' / '),correct:q.items.map((x,i)=>`${i+1}. ${x}`).join(' / '),why:q.why});
+    feedback(ok?'ok':'bad',{ans:`<span style="font-size:16px;font-weight:700;color:var(--text)">${ans}</span>`,why:q.why+(q.model?'<br><b>This is a model answer. Read it out loud once.</b>':''),rule:q.rule},done);};}
+
+/* ===================== ROUTER / HUB ===================== */
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$('#'+id).classList.add('on');window.scrollTo(0,0);if(id==='s-hub')renderHub();if(id!=='s-game')Lab.pause();}
+const ZONES=[
+ {id:'z1',ico:'📚',ttl:'Term Vault',meta:'Study guide · all 20 terms',desc:'Every box on the study guide: term to definition and back.',gen:genZ1},
+ {id:'z2',ico:'⚙️',ttl:'Cause & Effect Works',meta:'Farms → factories · inventors',desc:'Order the cause-and-effect chains. Who invented what, and what it really did.',gen:genZ2},
+ {id:'z3',ico:'🔄',ttl:'Change Tracker',meta:'Long answer topic 1 · Changes',desc:'Early changes vs later changes, and before → after.',gen:genZ3},
+ {id:'z4',ico:'🏭',ttl:'City Life',meta:'Long answer topic 2 · Impact',desc:'Working vs living conditions. Positive vs negative effects.',gen:genZ4},
+ {id:'z5',ico:'🎩',ttl:'Class Sorter',meta:'Upper · middle · working',desc:'Sort people into social classes and see how class shaped life.',gen:genZ5},
+ {id:'z6',ico:'💡',ttl:'Big Ideas',meta:'The 8 blank boxes',desc:'Marx, Smith, capitalism, communism, socialism, laissez-faire, suffrage.',gen:genZ6,brief:()=>BRIEF_IDEAS},
+ {id:'z7',ico:'✍️',ttl:'Long Answer Workshop',meta:'All three prompts',desc:'Find the focus, pick the evidence, build a model paragraph.',gen:genZ7},
+ {id:'boss',ico:'👑',ttl:'BOSS TEST',meta:'Full practice test · multiple choice',desc:'Every section, shuffled fresh each time. Graded with explanations.',boss:true}
+];
+const SK={terms:'term definitions',causes:'cause and effect chains',inventions:'inventors and inventions',changes:'early vs later changes',conditions:'working vs living conditions',effects:'positive vs negative effects',classes:'social classes',ideas:'Marx, Smith, and the -isms',writing:'long answer structure'};
+const REC={terms:'z1',causes:'z2',inventions:'z2',changes:'z3',conditions:'z4',effects:'z4',classes:'z5',ideas:'z6',writing:'z7'};
+function stars(acc){return acc>=0.9?3:acc>=0.7?2:acc>=0.45?1:0;}
+function renderHub(){touchStreak();
+  $('#pill-level').textContent='Lv '+level();$('#pill-xp').textContent=P.xp+' XP';$('#pill-streak').textContent='🔥 '+P.streak+' day'+(P.streak===1?'':'s');
+  $('#xpbar').style.width=((P.xp%250)/250*100)+'%';$('#mute').textContent=P.muted?'🔇':'🔊';$('#voice').textContent=P.voice===false?'🗣️✕':'🗣️';
+  const z=$('#zones');z.innerHTML='';
+  ZONES.forEach(zn=>{const st=P.zones[zn.id]||{};const c=el('div','card zone'+(zn.boss?' boss':''));
+    c.innerHTML=`<div class="best">${zn.boss?(P.bossBest!=null?'best '+P.bossBest+'%':''):(st.best!=null?'best '+Math.round(st.best*100)+'%':'')}</div><div class="ico">${zn.ico}</div><div class="ttl">${zn.ttl}</div><div class="meta">${zn.meta}</div><div class="sub" style="font-size:15px;margin-bottom:10px">${zn.desc}</div><div class="stars">${zn.boss?(P.bossBest!=null?'👑':''):'★'.repeat(st.stars||0)+'<span style="opacity:.25">'+'★'.repeat(3-(st.stars||0))+'</span>'}</div>`;
+    c.onclick=()=>zn.boss?Boss.start():startZone(zn);z.appendChild(c);});
+  const s=$('#skills');s.innerHTML='';let weakest=null;
+  Object.entries(SK).forEach(([k,l])=>{const d=P.skills[k];const pct=d?Math.round(d.ok/d.n*100):null;if(d&&d.n>=3&&(weakest==null||pct<weakest.pct))weakest={k,l,pct};
+    s.appendChild(el('div','skill',`<div class="lbl"><span>${l}</span><span>${pct==null?'—':pct+'%'}</span></div><div class="bar"><i class="${pct!=null&&pct<60?'low':''}" style="width:${pct||0}%"></i></div>`));});
+  $('#coach').innerHTML=weakest?`🎯 <b>Coach:</b> weakest skill is <b>${weakest.l}</b> (${weakest.pct}%). Train it in <b>${ZONES.find(z=>z.id===REC[weakest.k]).ttl}</b>.`:'🎯 <b>Coach:</b> play each zone once to light up the skill meter, then get 3 stars everywhere before the Boss.';}
+
+/* ===================== RUN ===================== */
+const run={id:null,title:'',total:0,done:0,correct:0,combo:0,xp:0,mist:[],again:null,qs:[],i:0};
+function startZone(zn){const qs=zn.gen();Object.assign(run,{id:zn.id,title:zn.ttl,total:qs.length,done:0,correct:0,combo:0,xp:0,mist:[],again:()=>startZone(zn),qs,i:0});$('#g-title').textContent=zn.ttl;hud();go('s-game');if(zn.brief){const st=$('#stage');st.innerHTML=zn.brief();const b=el('button','btn primary wide mt','▶ Start the questions');b.onclick=nextQ;st.appendChild(b);}else nextQ();}
+function hud(){$('#g-prog').style.width=(run.total?run.done/run.total*100:0)+'%';$('#g-score').textContent=run.correct+' ✔';const c=$('#g-combo');c.textContent=run.combo>=2?'COMBO x'+Math.min(run.combo,5):'';c.className='combo'+(run.combo>=4?' hot':'');}
+function mark(ok,mist){run.done++;if(ok){run.correct++;run.combo++;run.xp+=10*Math.min(run.combo,3);sfx.ok();if(run.combo===3||run.combo===5)setTimeout(()=>sfx.combo(),250);}else{run.combo=0;sfx.bad();if(mist)run.mist.push(mist);}hud();}
+function quitGame(){Lab.pause();go('s-hub');}
+function nextQ(){if(run.i>=run.qs.length)return finishRun();const q=run.qs[run.i++];const st=$('#stage');st.innerHTML='';Lab.pause();
+  if(q.lab){Lab.ensure(st);Lab.mode(q.lab);}
+  if(q.type==='mc')askMC(st,q,nextQ);else if(q.type==='num')askNum(st,q,nextQ);else if(q.type==='order')askOrder(st,q,nextQ);else if(q.type==='fbd')askFBD(st,q,nextQ);else askChain(st,q,nextQ);}
+function finishRun(){Lab.pause();const acc=run.total?run.correct/run.total:0;const st=stars(acc);const bonus=st*25;run.xp+=bonus;addXP(run.xp);
+  const z=P.zones[run.id]=P.zones[run.id]||{};z.stars=Math.max(z.stars||0,st);z.best=Math.max(z.best||0,acc);save();
+  if(st===0)sfx.lose();else sfx.win();for(let i=0;i<st;i++)setTimeout(()=>sfx.star(),900+i*350);setTimeout(()=>say([st===3?'Three stars!':st>0?'Zone cleared.':'Keep going.']),st?2000:1200);
+  $('#r-zone').textContent=run.title.toUpperCase()+(acc===1?' · PERFECT!':st>0?' · CLEAR':' · KEEP GOING');
+  $('#r-stars').innerHTML='★'.repeat(st)+'<span style="opacity:.2">'+'★'.repeat(3-st)+'</span>';
+  $('#r-acc').textContent=Math.round(acc*100)+'%';$('#r-xp').textContent=`+${run.xp} XP (includes ${bonus} star bonus) · ${run.correct}/${run.total} correct`;
+  const m=$('#r-mist');m.innerHTML=run.mist.length?'<h3 style="margin:0 0 6px">Fix these:</h3>':'<div class="center sub">No mistakes. 🔥</div>';
+  run.mist.forEach(x=>m.appendChild(el('div','mist',`<div>${x.prompt}</div>${x.yours?`<div>You: <span class="y">${x.yours}</span></div>`:''}<div>Answer: <span class="c">${x.correct}</span></div>${x.why?`<div class="sub" style="font-size:14px;margin-top:4px">${x.why}</div>`:''}`)));
+  $('#r-again').onclick=run.again;go('s-results');}
+function feedback(kind,o,next){const sh=$('#fb-sheet');sh.className='sheet '+kind;const praise=kind==='ok'?rnd(PRAISE_OK):'Not quite.';
+  sh.innerHTML=`<h3>${kind==='ok'?'✅ '+praise:'❌ '+rnd(['Not quite','Almost — look:','Remember this one'])}</h3>${o.ans?`<div class="ans">${o.ans}</div>`:''}${o.why?`<div class="why">${o.why}</div>`:''}<button class="btn primary wide" id="fb-next">Continue →</button>`;
+  $('#fb').classList.add('on');const b=$('#fb-next');b.onclick=()=>{$('#fb').classList.remove('on');stopVoice();next&&next();};b.focus();
+  const parts=[praise];if(o.rule&&RULES[o.rule])parts.push(RULES[o.rule]);else if(o.speak)parts.push(o.speak);setTimeout(()=>say(parts),300);}
+function flash(kind,txt){const f=el('div','flash '+kind,txt);document.body.appendChild(f);setTimeout(()=>f.remove(),750);}
+
+/* ===================== QUESTION ENGINES ===================== */
+function askMC(st,q,done){const opts=shuffle(q.opts);st.appendChild(el('div','prompt',`${q.q}<small>${run.id?`${run.i}/${run.total}`:''}</small>`));const g=el('div','opts'+(opts.every(o=>o.length<28)?' two':''));
+  opts.forEach((t,k)=>{const b=el('button','opt',`<span class="k">${'abcd'[k]}</span>${t}`);b.onclick=()=>{g.querySelectorAll('.opt').forEach(x=>x.disabled=true);const ok=t===q.a;b.classList.add(ok?'ok':'bad');if(!ok)[...g.children].find(x=>x.textContent.slice(1)===q.a).classList.add('ok');logSkill(q.skill,ok);
+    mark(ok,{prompt:q.q,yours:t,correct:q.a,why:q.why});feedback(ok?'ok':'bad',{ans:q.a,why:q.why,rule:q.rule,speak:q.speak},done);};g.appendChild(b);});st.appendChild(g);}
+function askNum(st,q,done){st.appendChild(el('div','prompt',`${q.q}<small>${run.id?`${run.i}/${run.total} · `:''}type the number, then pick the unit</small>`));const inp=el('input','inp');inp.type='text';inp.inputMode='decimal';inp.placeholder='number…';inp.autocomplete='off';st.appendChild(inp);
+  const u=el('div','units');let unit=null;shuffle(q.units).forEach(x=>{const b=el('button',null,x);b.onclick=()=>{u.querySelectorAll('button').forEach(y=>y.classList.remove('sel'));b.classList.add('sel');unit=x;sfx.tick();};u.appendChild(b);});st.appendChild(u);
+  const row=el('div','row end');const chk=el('button','btn good','✔ Check');row.appendChild(chk);st.appendChild(row);inp.focus();
+  const check=()=>{const v=parseFloat(inp.value.replace(/,/g,''));if(isNaN(v)){flash('bad','Type a number');return;}if(!unit){flash('bad','Pick a unit');return;}chk.disabled=true;const vOK=Math.abs(v-q.a)<=Math.max(Math.abs(q.a)*q.tol,0.01);const uOK=unit===q.unit;const ok=vOK&&uOK;
+    inp.classList.add(vOK?'ok':'bad');u.querySelectorAll('button').forEach(b=>{if(b.textContent===q.unit)b.classList.add('ok');else if(b.textContent===unit&&!uOK)b.classList.add('bad');});logSkill(q.skill,ok);
+    const ans=`${fmt(q.a)} ${q.unit}`;mark(ok,{prompt:q.q,yours:`${inp.value} ${unit}`,correct:ans,why:q.why});
+    feedback(ok?'ok':'bad',{ans,why:q.why+(vOK&&!uOK?' <b>Your number was right; check the unit.</b>':''),rule:q.rule},done);};
+  chk.onclick=check;inp.onkeydown=e=>{if(e.key==='Enter')check();};}
+function askFBD(st,q,done){const s=q.scn;st.appendChild(el('div','prompt',`${s.t}<small>${run.i}/${run.total} · Tap a slot, then pick the force. Use “none” for empty sides.</small>`));
+  const box=el('div','fbd');box.innerHTML=`<svg viewBox="0 0 300 300"><rect x="125" y="125" width="50" height="50" rx="6" fill="#ffd166"/><g id="arrows"></g></svg>`;
+  const pos={up:[150,48],down:[150,252],left:[52,150],right:[248,150]};const sel={};let active=null;const slots={};
+  Object.entries(pos).forEach(([k,[x,y]])=>{const sl=el('button','slot','?');sl.style.left=x+'px';sl.style.top=y+'px';sl.onclick=()=>{Object.values(slots).forEach(z=>z.classList.remove('active'));sl.classList.add('active');active=k;sfx.tick();};slots[k]=sl;box.appendChild(sl);});
+  st.appendChild(box);
+  const bank=el('div','bank');const tiles=shuffle(uniq([s.up,s.down,s.left,s.right,...s.extra].filter(x=>x!=='none'))).concat(['none']);
+  tiles.forEach(t=>{const b=el('button','tile',t);b.onclick=()=>{if(!active){flash('bad','Tap a slot first');return;}sel[active]=t;slots[active].textContent=t;slots[active].classList.add('set');slots[active].classList.remove('active');drawArrows();active=null;sfx.tick();say([t.replace(/ [\d,]+ N$/,'')]);};bank.appendChild(b);});st.appendChild(bank);
+  function drawArrows(){const g=box.querySelector('#arrows');g.innerHTML='';const maxN=Math.max(...Object.values(sel).map(v=>parseFloat((v.match(/([\d,.]+) N/)||[0,0])[1].toString().replace(/,/g,''))||0),1);
+    Object.entries(sel).forEach(([k,v])=>{if(v==='none')return;const n=parseFloat(((v.match(/([\d,.]+) N/)||[0,0])[1]+'').replace(/,/g,''))||0;const L=28+60*(n/maxN);const d={up:[150,125,150,125-L],down:[150,175,150,175+L],left:[125,150,125-L,150],right:[175,150,175+L,150]}[k];
+      g.innerHTML+=`<line x1="${d[0]}" y1="${d[1]}" x2="${d[2]}" y2="${d[3]}" stroke="#4cc9f0" stroke-width="5" stroke-linecap="round"/><circle cx="${d[2]}" cy="${d[3]}" r="6" fill="#4cc9f0"/>`;});}
+  const row=el('div','row end');const hint=el('button','btn sm','💡 Hint');hint.onclick=()=>hint.replaceWith(el('div','tip',`Weight ${s.w} N always points down. In equilibrium every force is cancelled by an equal one the other way. ${RULES[s.rule]}`));const chk=el('button','btn good','✔ Check');row.append(hint,chk);st.appendChild(row);
+  chk.onclick=()=>{const keys=['up','down','left','right'];if(keys.some(k=>!sel[k])){flash('bad','Fill all four sides (use “none”)');return;}chk.disabled=true;let ok=true;keys.forEach(k=>{const good=sel[k]===s[k];slots[k].classList.add(good?'ok':'bad');if(!good)ok=false;});logSkill('fbd',ok);
+    const ans=`↑ ${s.up} · ↓ ${s.down} · ← ${s.left} · → ${s.right}`;mark(ok,{prompt:s.t,yours:keys.map(k=>sel[k]).join(' · '),correct:ans,why:RULES[s.rule]});
+    feedback(ok?'ok':'bad',{ans,why:`${RULES[s.rule]} Net force here: <b>${s.net}</b>.`,rule:s.rule},()=>{const opts=uniq([s.net,`${fmt(s.w)} N downward`,`${fmt(s.w)} N upward`,'cannot be determined']);const st2=$('#stage');st2.innerHTML='';askMC(st2,mcq(`Same object: <b>${s.t}</b> What is the net force on it?`,opts,s.net,s.net==='0 N'?'All the forces cancel, so the net force is 0 N: equilibrium.':'Only gravity acts, so the net force equals the weight, pointing down. Not equilibrium.','equilibrium',s.rule),done);});};}
+function askChain(st,q,done){const c=q.c,[v,u]=q.start;st.appendChild(el('div','prompt',`Convert <b>${fmt(v)} ${u}</b> to <b>${c.target}</b>.<small>${run.i}/${run.total} · Tap the factors in order so each unit cancels the one before it.</small>`));
+  const line=el('div','line');const start=el('div','tile fixed',`${fmt(v)} ${u}`);line.appendChild(start);const ph=el('span','ph','× …');line.appendChild(ph);st.appendChild(line);
+  const bank=el('div','bank');const placed=[];const mk=([n,d])=>`${n}<span class="fr">${d}</span>`;
+  shuffle([...c.steps,...c.extra]).forEach(f=>{const b=el('button','tile',mk(f));b.onclick=()=>{if(b.classList.contains('used'))return;b.classList.add('used');const t=el('button','tile',mk(f));t.f=f;t.onclick=()=>{t.remove();b.classList.remove('used');placed.splice(placed.indexOf(t),1);};placed.push(t);line.insertBefore(t,ph);sfx.tick();say([f[0]+' over '+f[1]]);};bank.appendChild(b);});st.appendChild(bank);
+  const row=el('div','row end');const hint=el('button','btn sm','💡 Hint');hint.onclick=()=>hint.replaceWith(el('div','tip',RULES.units+` Chain: ${u} → ${c.steps.map(s=>unitOf(s[0])).join(' → ')}.`));const chk=el('button','btn good','✔ Check chain');row.append(hint,chk);st.appendChild(row);
+  chk.onclick=()=>{if(!placed.length)return;let prev=u,ok=true,msg='';for(const t of placed){const [n,d]=t.f;if(unitOf(d)!==prev){ok=false;msg=`<b>${n} / ${d}</b> doesn't cancel <b>${prev}</b>: the unit you want to cancel must be on the <i>bottom</i>.`;break;}prev=unitOf(n);}
+    if(ok&&prev!==c.target){ok=false;msg=`You ended in <b>${prev}</b>, not <b>${c.target}</b>. Keep going.`;}
+    line.classList.add(ok?'ok':'bad');chk.disabled=true;logSkill('units',ok);
+    if(!ok){mark(false,{prompt:`${fmt(v)} ${u} → ${c.target}`,yours:placed.map(t=>t.f.join('/')).join(' × '),correct:c.steps.map(s=>s.join('/')).join(' × '),why:RULES.units});feedback('bad',{ans:`${fmt(v)} ${u} × `+c.steps.map(s=>`(${s[0]} / ${s[1]})`).join(' × '),why:msg,rule:'units'},done);return;}
+    sfx.ok();const ans=c.calc(v);const p=el('div','mt');p.innerHTML=`<div class="tip">✅ Units cancel. Now calculate: <b>${fmt(v)} ${c.steps.map(s=>` × ${s[0].split(' ')[0]} ÷ ${s[1].split(' ')[0]}`).join('')}</b> = ? ${c.target}</div>`;const inp=el('input','inp');inp.inputMode='decimal';inp.placeholder='answer…';p.appendChild(inp);const r2=el('div','row end mt');const c2=el('button','btn good','✔ Check answer');r2.appendChild(c2);p.appendChild(r2);st.appendChild(p);inp.focus();
+    const chk2=()=>{const x=parseFloat(inp.value.replace(/,/g,''));if(isNaN(x))return;c2.disabled=true;const good=Math.abs(x-ans)<=Math.abs(ans)*0.015;inp.classList.add(good?'ok':'bad');mark(good,{prompt:`${fmt(v)} ${u} → ${c.target}`,yours:inp.value,correct:fmt(ans)+' '+c.target,why:'Chain was right; check the arithmetic: multiply across the top, divide by the bottom.'});
+      feedback(good?'ok':'bad',{ans:`${fmt(ans)} ${c.target}`,why:`${fmt(v)}${c.steps.map(s=>` × ${s[0].split(' ')[0]} ÷ ${s[1].split(' ')[0]}`).join('')} = <b>${fmt(ans)} ${c.target}</b>`,rule:'units'},done);};
+    c2.onclick=chk2;inp.onkeydown=e=>{if(e.key==='Enter')chk2();};};}
+
+const Lab={pause(){},ensure(){},mode(){}};
+
+/* ===================== BOSS TEST ===================== */
+const Boss={
+ start(){const mc=g=>g().filter(q=>q.type==='mc');const secs=[['Terms',shuffle(TERMS).slice(0,7).map(t=>termQ(t))],['Causes, effects & inventions',mc(genZ2).slice(0,6)],['Changes in the Industrial Revolution',mc(genZ3).slice(0,5)],['Impact: conditions and effects',mc(genZ4).slice(0,6)],['Social classes',mc(genZ5).slice(0,5)],['Big ideas',mc(genZ6).slice(0,6)],['Long answer skills',mc(genZ7).slice(0,3)]];
+  this.secs=secs;this.qs=secs.flatMap(s=>s[1]);this.qs.forEach(q=>{q.shuffled=shuffle(q.opts);});this.render();go('s-boss');},
+ render(){const b=$('#boss-body');let n=0;let h=`<h2 class="pix">UNIT 3 — THE INDUSTRIAL REVOLUTION</h2><p class="sub">${this.qs.length} questions, multiple choice, covering every box on the study guide. Questions reshuffle every time.</p>`;
+  this.secs.forEach(([name,qs])=>{h+=`<div class="ex-sec"><h3>${name}</h3>`;qs.forEach(q=>{const i=n++;q.idx=i;h+=`<div class="exq" id="bq${i}"><div class="qt">${i+1}. ${q.q}</div>`;
+    if(q.type==='mc')q.shuffled.forEach((o,k)=>{h+=`<label><input type="radio" name="q${i}" value="${k}">${o}</label>`;});else h+=`<input class="inp" data-i="${i}" inputmode="decimal" placeholder="number"> <b>${q.unit}</b>`;h+=`</div>`;});h+=`</div>`;});
+  h+=`<button class="btn primary wide" id="boss-grade">📝 Grade it</button><div id="boss-res" class="mt"></div>`;b.innerHTML=h;$('#boss-grade').onclick=()=>this.grade();},
+ grade(){let pts=0;const miss=[];this.qs.forEach(q=>{const i=q.idx;const box=$('#bq'+i);let ok=false,key='';
+   if(q.type==='mc'){const r=box.querySelector('input[type=radio]:checked');ok=!!r&&q.shuffled[+r.value]===q.a;key=q.a;}else{const v=parseFloat((box.querySelector('input').value||'').replace(/,/g,''));ok=!isNaN(v)&&Math.abs(v-q.a)<=Math.max(Math.abs(q.a)*q.tol,0.01);key=fmt(q.a)+' '+q.unit;}
+   box.classList.add(ok?'ok':'bad');logSkill(q.skill,ok);if(ok)pts++;else{box.appendChild(el('span','key','✔ '+key+(q.why?' — '+q.why:'')));miss.push(q);}
+   box.querySelectorAll('input').forEach(x=>x.disabled=true);});
+  const pct=Math.round(pts/this.qs.length*100);$('#boss-grade').disabled=true;addXP(pts*8+(pct>=90?100:0));if(P.bossBest==null||pct>P.bossBest)P.bossBest=pct;save();
+  if(pct>=90){sfx.fanfare();setTimeout(()=>say(["Test passed. That's an A."]),2200);}else if(pct>=60){sfx.win();setTimeout(()=>say(['Almost. Review the weak spots and try again.']),1800);}else{sfx.lose();setTimeout(()=>say(['Keep going.']),1400);}
+  const bySkill={};miss.forEach(q=>{bySkill[q.skill]=(bySkill[q.skill]||0)+1;});const weak=Object.entries(bySkill).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,n])=>`<b>${SK[k]}</b> (${n} missed) → ${ZONES.find(z=>z.id===REC[k]).ttl}`);
+  const r=$('#boss-res');r.innerHTML=`<div class="card center"><div class="stars-big">${pct>=90?'👑👑👑':pct>=75?'👑👑':pct>=50?'👑':'💀'}</div><div class="big">${pts} / ${this.qs.length} · ${pct}%</div><div class="sub">${pct>=90?'Boss defeated. That\'s an A.':pct>=75?'Solid. A few more reps.':'Train the zones, then come back.'}</div>${weak.length?`<div style="text-align:left;margin-top:12px"><b>Train next:</b>${weak.map(w=>`<div class="mist">${w}</div>`).join('')}</div>`:''}<div class="row mt" style="justify-content:center"><button class="btn primary" onclick="Boss.start()">↻ New test</button><button class="btn" onclick="go('s-hub')">🗺 Map</button></div></div>`;r.scrollIntoView({behavior:'smooth'});}
+};
+
+/* ===================== REFERENCE / MISC ===================== */
+function openRef(){$('#ref').classList.add('on');}
+function closeRef(){$('#ref').classList.remove('on');}
+(function(){const v=$('#ref-vocab');v.innerHTML=TERMS.map(t=>`<div style="margin-bottom:6px;break-inside:avoid"><b data-say="${RULES[t[0]]}" style="cursor:pointer">${t[1]}</b> — ${t[2]}. <i class="sub">${t[3]}</i></div>`).join('');})();
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeRef();});
+document.addEventListener('click',e=>{const b=e.target.closest('.btn');if(b&&!b.classList.contains('opt'))sfx.click();const s=e.target.closest('[data-say]');if(s)say([s.dataset.say]);});
+function AUDIO_TEXTS(){const S=new Set(Object.values(RULES));[...PRAISE_OK,'Not quite.','Three stars!','Zone cleared.','Keep going.','Welcome back, Luca. Time to run the factory.',"Test passed. That's an A.",'Almost. Review the weak spots and try again.'].forEach(x=>S.add(x));return [...S];}
+go('s-title');
+</script>
+</body>
+</html>
